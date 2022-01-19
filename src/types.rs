@@ -1,6 +1,28 @@
-use std::fmt;
-use lazy_static::lazy_static;
-use regex::Regex;
+use std::{
+    fmt::{
+        self,
+        Display,
+        Formatter,
+    },
+    str::FromStr,
+    error::Error
+};
+
+#[derive(Debug)]
+pub enum ParseError {
+    UnknownToken(String),
+}
+
+impl Display for ParseError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParseError::UnknownToken(s) => write!(f, "Unknown token: {}", s),
+            _ => write!(f, "Error: {}", self)
+        }
+    }
+}
+
+impl Error for ParseError {}
 
 #[derive(Debug)]
 pub enum Operator {
@@ -23,8 +45,8 @@ impl Operator {
     }
 }
 
-impl fmt::Display for Operator {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Display for Operator {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             Operator::SUB => write!(f, "{}", "-"),
             Operator::ADD => write!(f, "{}", "+"),
@@ -35,18 +57,18 @@ impl fmt::Display for Operator {
     }
 }
 
-#[derive(Debug)]
-pub enum Number {
-    CONSTANT(f64),
-    VARIABLE(String)
-}
-
-impl fmt::Display for Number {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Number::CONSTANT(n) => write!(f, "{}", n),
-            Number::VARIABLE(v) => write!(f, "{}", v)
-        }
+impl FromStr for Operator {
+    type Err = ParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+       let o = match s {
+            "+" => Operator::ADD,
+            "-" => Operator::SUB,
+            "/" => Operator::DIV,
+            "*" => Operator::MUL,
+            "^" => Operator::POW,
+            _ => {return Err(ParseError::UnknownToken(s.to_string()))},
+        };
+        Ok(o)
     }
 }
 
@@ -56,44 +78,42 @@ pub enum Bracket {
     PRIGHT, // Parantheses, right
 }
 
-#[derive(Debug)]
-pub enum Node {
-    NUMBER(Number),
-    OPERATOR(Operator),
-    BRACKET(Bracket)
+impl FromStr for Bracket {
+    type Err = ParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let b = match s {
+            "(" => Bracket::PLEFT,
+            ")" => Bracket::PRIGHT,
+            _ => {return Err(ParseError::UnknownToken(s.to_string()))}
+        };
+        Ok(b)
+    }
 }
 
-impl From<&str> for Node {
-    fn from(s: &str) -> Self {
+#[derive(Debug)]
+pub enum Node {
+    NUMBER(f64),
+    VARIABLE(String),
+    OPERATOR(Operator),
+    BRACKET(Bracket),
+}
+
+impl FromStr for Node {
+    type Err = ParseError;
+    fn from_str(s: &str) -> Result<Node, ParseError> {
         let n: Node;
 
-        lazy_static!{
-            static ref P_LEFT: Regex = Regex::new(r"\(").unwrap();
-            static ref P_RIGHT: Regex = Regex::new(r"\)").unwrap();
-            static ref NUM: Regex = Regex::new(r"\d").unwrap();
-            static ref OP: Regex = Regex::new("[+-/*^]").unwrap();
-        };
-
-        if P_LEFT.is_match(s) {
-            n = Node::BRACKET(Bracket::PLEFT);
-        } else if P_RIGHT.is_match(s) {
-            n = Node::BRACKET(Bracket::PRIGHT);
-        } else if NUM.is_match(s) {
-            n = Node::NUMBER(Number::CONSTANT(s.parse::<f64>().unwrap()));
-        } else if OP.is_match(s) {
-            n = match s {
-                "+" => Node::OPERATOR(Operator::ADD),
-                "-" => Node::OPERATOR(Operator::SUB),
-                "/" => Node::OPERATOR(Operator::DIV),
-                "*" => Node::OPERATOR(Operator::MUL),
-                "^" => Node::OPERATOR(Operator::POW),
-                _ => Node::OPERATOR(Operator::MUL),
-            };
+        if let Ok(b) = Bracket::from_str(s) {
+            n = Node::BRACKET(b);
+        } else if let Ok(o) = Operator::from_str(s) {
+            n = Node::OPERATOR(o);
+        } else if let Ok(m) = s.parse::<u64>() {
+            n = Node::NUMBER(m as f64);
         } else {
-            n = Node::NUMBER(Number::VARIABLE(s.to_string()));
+            n = Node::VARIABLE(s.to_string());
         }
 
-        n
+        Ok(n)
     }
 }
 
