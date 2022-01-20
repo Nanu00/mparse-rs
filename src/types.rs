@@ -26,21 +26,21 @@ impl Error for ParseError {}
 
 #[derive(Debug)]
 pub enum Operator {
-    SUB,
-    ADD,
-    MUL,
-    DIV,
-    POW
+    Sub,
+    Add,
+    Mul,
+    Div,
+    Pow
 }
 
 impl Operator {
     pub fn precedence(&self) -> u8 {
         match self {
-            Operator::SUB => 2,
-            Operator::ADD => 2,
-            Operator::MUL => 3,
-            Operator::DIV => 3,
-            Operator::POW => 4,
+            Operator::Sub => 2,
+            Operator::Add => 2,
+            Operator::Mul => 3,
+            Operator::Div => 3,
+            Operator::Pow => 4,
         }
     }
 }
@@ -48,11 +48,11 @@ impl Operator {
 impl Display for Operator {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
-            Operator::SUB => write!(f, "{}", "-"),
-            Operator::ADD => write!(f, "{}", "+"),
-            Operator::MUL => write!(f, "{}", "*"),
-            Operator::DIV => write!(f, "{}", "/"),
-            Operator::POW => write!(f, "{}", "^"),
+            Operator::Sub => write!(f, "{}", "-"),
+            Operator::Add => write!(f, "{}", "+"),
+            Operator::Mul => write!(f, "{}", "*"),
+            Operator::Div => write!(f, "{}", "/"),
+            Operator::Pow => write!(f, "{}", "^"),
         }
     }
 }
@@ -61,11 +61,11 @@ impl FromStr for Operator {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
        let o = match s {
-            "+" => Operator::ADD,
-            "-" => Operator::SUB,
-            "/" => Operator::DIV,
-            "*" => Operator::MUL,
-            "^" => Operator::POW,
+            "+" => Operator::Add,
+            "-" => Operator::Sub,
+            "/" => Operator::Div,
+            "*" => Operator::Mul,
+            "^" => Operator::Pow,
             _ => {return Err(ParseError::UnknownToken(s.to_string()))},
         };
         Ok(o)
@@ -74,16 +74,16 @@ impl FromStr for Operator {
 
 #[derive(Debug)]
 pub enum Bracket {
-    PLEFT,  // Parantheses, left
-    PRIGHT, // Parantheses, right
+    PLeft,  // Parantheses, left
+    PRight, // Parantheses, right
 }
 
 impl FromStr for Bracket {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let b = match s {
-            "(" => Bracket::PLEFT,
-            ")" => Bracket::PRIGHT,
+            "(" => Bracket::PLeft,
+            ")" => Bracket::PRight,
             _ => {return Err(ParseError::UnknownToken(s.to_string()))}
         };
         Ok(b)
@@ -92,10 +92,10 @@ impl FromStr for Bracket {
 
 #[derive(Debug)]
 pub enum Node {
-    NUMBER(f64),
-    VARIABLE(String),
-    OPERATOR(Operator),
-    BRACKET(Bracket),
+    Literal(f64),
+    Variable(String),
+    Operator(Operator),
+    Bracket(Bracket),
 }
 
 impl FromStr for Node {
@@ -104,13 +104,13 @@ impl FromStr for Node {
         let n: Node;
 
         if let Ok(b) = Bracket::from_str(s) {
-            n = Node::BRACKET(b);
+            n = Node::Bracket(b);
         } else if let Ok(o) = Operator::from_str(s) {
-            n = Node::OPERATOR(o);
+            n = Node::Operator(o);
         } else if let Ok(m) = s.parse::<u64>() {
-            n = Node::NUMBER(m as f64);
+            n = Node::Literal(m as f64);
         } else if s.chars().all(char::is_alphabetic) {
-            n = Node::VARIABLE(s.to_string());
+            n = Node::Variable(s.to_string());
         } else {
             return Err(ParseError::UnknownToken(s.to_string()));
         }
