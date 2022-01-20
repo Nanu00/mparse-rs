@@ -109,10 +109,11 @@ impl FromStr for Node {
             n = Node::OPERATOR(o);
         } else if let Ok(m) = s.parse::<u64>() {
             n = Node::NUMBER(m as f64);
-        } else {
+        } else if s.chars().all(char::is_alphabetic) {
             n = Node::VARIABLE(s.to_string());
+        } else {
+            return Err(ParseError::UnknownToken(s.to_string()));
         }
-
         Ok(n)
     }
 }
