@@ -117,8 +117,3 @@ impl FromStr for Node {
         Ok(n)
     }
 }
-
-pub struct Leaf {
-    n: Node,
-    leaves: Vec<Option<Leaf>>
-}
