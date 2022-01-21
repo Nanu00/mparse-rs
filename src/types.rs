@@ -17,7 +17,7 @@ impl Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ParseError::UnknownToken(s) => write!(f, "Unknown token: {}", s),
-            _ => write!(f, "Error: {}", self)
+            // _ => write!(f, "Error: {}", self)
         }
     }
 }
